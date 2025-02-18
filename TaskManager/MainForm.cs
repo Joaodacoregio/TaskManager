@@ -27,6 +27,8 @@ namespace TaskManager
             this.Size = new Size(1000, 700);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.BackColor = Color.White;
+            this.MaximizeBox = false;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;  
 
             AddSideMenu();
             AddMainPanel();
@@ -127,8 +129,8 @@ namespace TaskManager
 
             taskList.Columns.Add("Id", 0); // 0 para não exibir
             taskList.Columns.Add("Nome", 300);
-            taskList.Columns.Add("Data", 200);
-            taskList.Columns.Add("Status", 150);
+            taskList.Columns.Add("Data limite", 200);
+            taskList.Columns.Add("Status", 240);
 
             taskList.DrawSubItem += taskList_DrawSubItem; // Vinculando o evento
             taskList.DrawColumnHeader += taskList_DrawColumnHeader; // Para desenhar o cabeçalho
@@ -153,18 +155,27 @@ namespace TaskManager
 
         private void ReadDescriptionMenuItem_Click(object sender, EventArgs e)
         {
-            ListViewItem selectedItem = taskList.SelectedItems[0];
-            int taskId = Convert.ToInt32(selectedItem.SubItems[0].Text);
+            try 
+            {
+                ListViewItem selectedItem = taskList.SelectedItems[0];
+                int taskId = Convert.ToInt32(selectedItem.SubItems[0].Text);
 
-            string description = database.getTaskDescription(taskId);
-
-
+                string description = database.getTaskDescription(taskId);
+                using (DescriptionModalForm descriptionForm = new DescriptionModalForm(description))
+                {
+                    descriptionForm.ShowDialog();  
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("Erro ao exibir descrição " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
            
         }
 
         private void btnAddTaskClick(object sender, EventArgs e)
         {
-            using (AddTaskForm addTaskForm = new AddTaskForm())
+            using (AddTaskModalForm addTaskForm = new AddTaskModalForm())
             {
                 if (addTaskForm.ShowDialog() == DialogResult.OK)
                 {
