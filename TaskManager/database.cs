@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
+using System.Windows.Forms;
+using System.Xml.Linq;
 
 namespace TaskManager
 {
@@ -11,6 +13,7 @@ namespace TaskManager
 
         public abstract void InitializeDatabase();
         public abstract void InsertTask(string name, string date);
+        public abstract void DeleteTask(int ID);
         public abstract SQLiteDataReader GetAllTasks();
 
 
@@ -75,6 +78,30 @@ namespace TaskManager
                 }
             }
         }
+
+        public override void DeleteTask(int ID)
+        {
+            using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
+            {
+                try
+                {
+                    conn.Open();
+
+                    string deleteQuery = "DELETE FROM Tasks WHERE Id = @taskId";
+                    using (SQLiteCommand cmd = new SQLiteCommand(deleteQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@taskId", ID);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Erro ao excluir a tarefa: " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+
 
         public override SQLiteDataReader GetAllTasks()
         {

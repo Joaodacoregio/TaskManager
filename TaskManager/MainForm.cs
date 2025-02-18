@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data.SQLite;
 using System.Drawing;
+using System.Linq.Expressions;
 using System.Windows.Forms;
 
 
@@ -66,6 +67,7 @@ namespace TaskManager
             Button btnUpdateTask = CreateButton("⟳ Atualizar Tarefa", new Point(10, 120));
 
             btnAddTask.Click += btnAddTaskClick; // Conectando o evento de clique
+            btnRemoveTask.Click += btnRemoveTaskClick;
 
             sideMenu.Controls.Add(btnAddTask);
             sideMenu.Controls.Add(btnRemoveTask);
@@ -99,6 +101,8 @@ namespace TaskManager
                 FullRowSelect = true,
                 HeaderStyle = ColumnHeaderStyle.Clickable
             };
+
+            taskList.Columns.Add("Id", 0); // 0 para não exibir
             taskList.Columns.Add("Nome", 300);
             taskList.Columns.Add("Data", 200);
             taskList.Columns.Add("Status", 150);
@@ -127,14 +131,49 @@ namespace TaskManager
             {
                 if (addTaskForm.ShowDialog() == DialogResult.OK)
                 {
-
-                    database.InsertTask(addTaskForm.TaskName, addTaskForm.TaskDate);
-                    UpdateTaskList();  
+                    try
+                    {
+                        database.InsertTask(addTaskForm.TaskName, addTaskForm.TaskDate);
+                        UpdateTaskList();
+                    }
+                    catch(Exception ex)
+                    {
+                        MessageBox.Show("Erro ao adicionar tarefa " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
         }
 
- 
+        private void btnRemoveTaskClick(object sender, EventArgs e)
+        {
+            if (taskList.SelectedItems.Count > 0)
+            {
+                var result = MessageBox.Show("Tem certeza que deseja excluir esta tarefa?", "Confirmar Exclusão", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (result == DialogResult.Yes)
+                {
+                    try
+                    {
+                        // Pega o ID da tarefa selecionada (primeira coluna invisível)
+                        int taskId = Convert.ToInt32(taskList.SelectedItems[0].SubItems[0].Text); 
+                        // Chama o método de exclusão passando o ID
+                        database.DeleteTask(taskId);
+
+                        // Atualiza a lista de tarefas
+                        UpdateTaskList();
+                    }
+
+                    catch (Exception ex) 
+                    {
+                        MessageBox.Show("Erro ao excluir tarefa " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Por favor, selecione uma tarefa para excluir.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
 
         private void UpdateTaskList()
         {
@@ -151,6 +190,7 @@ namespace TaskManager
                     while (reader.Read())
                     {
                         // Certifica-se de que as colunas existem
+                        string taskId = reader["Id"].ToString(); // Pegue o ID da tarefa
                         string nome = reader["Name"].ToString();
                         string data = reader["Date"].ToString();
                         string status = reader["Status"].ToString();
@@ -160,17 +200,15 @@ namespace TaskManager
                             continue;
 
                         // Adiciona o item ao ListView
-                        ListViewItem item = new ListViewItem(nome);
+                        ListViewItem item = new ListViewItem(taskId); // Primeiro item é o ID (invisível)
+                        item.SubItems.Add(nome);
                         item.SubItems.Add(data);
                         item.SubItems.Add(status);
 
                         taskList.Items.Add(item);
                     }
                 }
-                else
-                {
-                    MessageBox.Show("Nenhuma tarefa encontrada.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
+ 
 
                 reader.Close();
             }

@@ -46,10 +46,11 @@ namespace TaskManager
             datePicker = new DateTimePicker()
             {
                 Location = new Point(100, 75),
-                Format = DateTimePickerFormat.Short,
+                Format = DateTimePickerFormat.Custom,
+                CustomFormat = "dd-MM-yyyy",
                 Font = new Font("Segoe UI", 10),
                 Width = 250
-            };
+            };  
 
             btnSave = new Button()
             {
@@ -98,7 +99,7 @@ namespace TaskManager
             }
 
             TaskName = txtName.Text;
-            TaskDate = datePicker.Value.ToString("yyyy-MM-dd"); // Formato seguro para banco de dados
+            TaskDate = datePicker.Value.ToString("dd-MM-yyyy");  
  
 
             this.DialogResult = DialogResult.OK;
