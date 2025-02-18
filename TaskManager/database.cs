@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SQLite;
 using System.IO;
 using System.Windows.Forms;
@@ -12,7 +13,9 @@ namespace TaskManager
         private string connectionString;
 
         public abstract void InitializeDatabase();
-        public abstract void InsertTask(string name, string date);
+        public abstract void InsertTask(string name, string date, string description);
+
+        public abstract string getTaskDescription(int ID);
         public abstract void DeleteTask(int ID);
         public abstract SQLiteDataReader GetAllTasks();
 
@@ -50,11 +53,13 @@ namespace TaskManager
             using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
             {
                 conn.Open();
+
                 string sql = @"CREATE TABLE IF NOT EXISTS Tasks (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Name TEXT NOT NULL,
                 Date TEXT NOT NULL,
-                Status TEXT NOT NULL DEFAULT 'Pendente'
+                Status TEXT NOT NULL DEFAULT 'Pendente',
+                Description TEXT  
                 );";
 
                 using (SQLiteCommand cmd = new SQLiteCommand(sql, conn))
@@ -63,17 +68,18 @@ namespace TaskManager
                 }
             }
         }
-        public override void InsertTask(string name, string date)
+        public override void InsertTask(string name, string date, string description)
         {
             using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
             {
                 conn.Open();
 
-                string insertQuery = "INSERT INTO Tasks (Name, Date, Status) VALUES (@name, @date, 'Pendente')";
+                string insertQuery = "INSERT INTO Tasks (Name, Date, Status, Description) VALUES (@name, @date, 'Pendente',@description)";
                 using (SQLiteCommand cmd = new SQLiteCommand(insertQuery, conn))
                 {
                     cmd.Parameters.AddWithValue("@name", name);
                     cmd.Parameters.AddWithValue("@date", date);
+                    cmd.Parameters.AddWithValue("@description", description);
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -100,6 +106,44 @@ namespace TaskManager
                 }
             }
         }
+
+
+        public override string getTaskDescription(int ID)
+        {
+            try
+            {
+                using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
+                {
+                    conn.Open();
+
+                    string query = "SELECT Description FROM Tasks WHERE Id = @taskId";
+                    using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
+                    {
+                        cmd.Parameters.Add("@taskId", DbType.Int32).Value = ID;
+                        object result = cmd.ExecuteScalar();
+
+                        if (result == null || result == DBNull.Value)
+                        {
+                            return "Descrição não encontrada."; // Evita exceção desnecessária
+                        }
+
+                        return result.ToString();
+                    }
+                }
+            }
+            catch (SQLiteException ex)
+            {
+                // Log do erro pode ser útil
+                Console.WriteLine("Erro no banco de dados: " + ex.Message);
+                return "Erro ao acessar o banco de dados.";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro inesperado: " + ex.Message);
+                return "Ocorreu um erro inesperado.";
+            }
+        }
+
 
 
 

@@ -10,6 +10,7 @@ namespace TaskManager
         private Panel sideMenu;
         private Panel mainPanel;
         private ListView taskList;
+        private ContextMenuStrip contextMenu;
         private Database database;
 
         public MainForm()
@@ -30,6 +31,30 @@ namespace TaskManager
             AddSideMenu();
             AddMainPanel();
             AddTaskList();
+            InitializeContextMenu();
+        }
+
+        //Menu quando apertar o right click do mousi
+        private void InitializeContextMenu()
+        {
+            contextMenu = new ContextMenuStrip();
+
+            ToolStripMenuItem readDescriptionMenuItem = new ToolStripMenuItem("👁️ Ler Descrição");
+            ToolStripMenuItem checkMenuItem = new ToolStripMenuItem("✔️ Concluir");
+
+            //Fontes
+            checkMenuItem.Font = new Font("Segoe UI", 12);
+            readDescriptionMenuItem.Font = new Font("Segoe UI", 12);
+
+            //Clicks
+            readDescriptionMenuItem.Click += ReadDescriptionMenuItem_Click;
+
+            //Adiciona
+            contextMenu.Items.Add(checkMenuItem);
+            contextMenu.Items.Add(readDescriptionMenuItem);
+
+            //Acopla ao task item
+            taskList.ContextMenuStrip = contextMenu;
         }
 
         private void AddSideMenu()
@@ -126,6 +151,17 @@ namespace TaskManager
             }
         }
 
+        private void ReadDescriptionMenuItem_Click(object sender, EventArgs e)
+        {
+            ListViewItem selectedItem = taskList.SelectedItems[0];
+            int taskId = Convert.ToInt32(selectedItem.SubItems[0].Text);
+
+            string description = database.getTaskDescription(taskId);
+
+
+           
+        }
+
         private void btnAddTaskClick(object sender, EventArgs e)
         {
             using (AddTaskForm addTaskForm = new AddTaskForm())
@@ -134,7 +170,7 @@ namespace TaskManager
                 {
                     try
                     {
-                        database.InsertTask(addTaskForm.TaskName, addTaskForm.TaskDate);
+                        database.InsertTask(addTaskForm.TaskName, addTaskForm.TaskDate, addTaskForm.TaskDescription);
                         UpdateTaskList();
                     }
                     catch (Exception ex)
