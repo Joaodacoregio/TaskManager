@@ -14,6 +14,7 @@ namespace TaskManager
 
         public abstract void InitializeDatabase();
         public abstract void InsertTask(string name, string date, string description);
+        public abstract void setStatus(int Id);
 
         public abstract string getTaskDescription(int ID);
         public abstract void DeleteTask(int ID);
@@ -145,6 +146,34 @@ namespace TaskManager
         }
 
 
+        public override void setStatus(int ID)
+        {
+            try
+            {
+                using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
+                {
+                    conn.Open();
+
+                    // Query de atualização
+                    string query = "UPDATE Tasks SET Status = 'Concluido' WHERE Id = @taskId";
+                    using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
+                    {
+                        cmd.Parameters.Add("@taskId", DbType.Int32).Value = ID;
+
+                        // Executa a atualização
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine("Erro no banco de dados: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro inesperado: " + ex.Message);
+            }
+        }
 
 
         public override SQLiteDataReader GetAllTasks()

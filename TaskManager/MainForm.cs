@@ -50,6 +50,7 @@ namespace TaskManager
 
             //Clicks
             readDescriptionMenuItem.Click += ReadDescriptionMenuItem_Click;
+            checkMenuItem.Click += checkMenuItem_Click;
 
             //Adiciona
             contextMenu.Items.Add(checkMenuItem);
@@ -173,6 +174,22 @@ namespace TaskManager
            
         }
 
+        private void checkMenuItem_Click(object sender , EventArgs e)
+        {
+            try
+            {
+                ListViewItem selectedItem = taskList.SelectedItems[0];
+                int taskId = Convert.ToInt32(selectedItem.SubItems[0].Text);
+
+                database.setStatus(taskId);
+                UpdateTaskList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro ao exibir descrição " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void btnAddTaskClick(object sender, EventArgs e)
         {
             using (AddTaskModalForm addTaskForm = new AddTaskModalForm())
@@ -237,15 +254,36 @@ namespace TaskManager
 
                 if (status == "Pendente")
                 {
-                    // Cor de fundo amarela para a célula
+
                     e.Graphics.FillRectangle(Brushes.Yellow, e.Bounds);
 
-                    // Texto em negrito e preto
                     using (var boldFont = new Font("Segoe UI", 12, FontStyle.Bold))
                     {
                         e.Graphics.DrawString(status, boldFont, Brushes.Black, e.Bounds);
                     }
                 }
+
+                else if (status == "Concluido")
+                {
+                    e.Graphics.FillRectangle(Brushes.Green, e.Bounds);
+
+                    using (var boldFont = new Font("Segoe UI", 12, FontStyle.Bold))
+                    {
+                        e.Graphics.DrawString(status, boldFont, Brushes.Black, e.Bounds);
+                    }
+                }
+
+
+                else if (status == "Expirado")
+                {
+                    e.Graphics.FillRectangle(Brushes.Red, e.Bounds);
+
+                    using (var boldFont = new Font("Segoe UI", 12, FontStyle.Bold))
+                    {
+                        e.Graphics.DrawString(status, boldFont, Brushes.Black, e.Bounds);
+                    }
+                }
+
                 else
                 {
                     e.DrawDefault = true;
