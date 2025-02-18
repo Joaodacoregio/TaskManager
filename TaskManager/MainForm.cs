@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Data.SQLite;
 using System.Drawing;
-using System.Linq.Expressions;
 using System.Windows.Forms;
 
-
- 
 namespace TaskManager
 {
     public class MainForm : Form
@@ -15,13 +12,12 @@ namespace TaskManager
         private ListView taskList;
         private Database database;
 
-
         public MainForm()
         {
             InitializeComponent();
             CustomizeUI();
-            initializeDatabase("SQLite"); // Vou usar SQLite para esse projeto por ser simples
-            UpdateTaskList();  
+            initializeDatabase("SQLite"); // da para implementar outros DB usando a factory
+            UpdateTaskList();
         }
 
         private void CustomizeUI()
@@ -66,7 +62,8 @@ namespace TaskManager
             Button btnRemoveTask = CreateButton("- Remover Tarefa", new Point(10, 70));
             Button btnUpdateTask = CreateButton("⟳ Atualizar Tarefa", new Point(10, 120));
 
-            btnAddTask.Click += btnAddTaskClick; // Conectando o evento de clique
+            //Clicks
+            btnAddTask.Click += btnAddTaskClick;  
             btnRemoveTask.Click += btnRemoveTaskClick;
 
             sideMenu.Controls.Add(btnAddTask);
@@ -95,9 +92,10 @@ namespace TaskManager
             taskList = new ListView()
             {
                 View = View.Details,
-                Size = new Size(750, 600), // Defini o tamanho statico
+                OwnerDraw = true, //Isso é usado para fazer desenhos personalizados
+                Size = new Size(750, 600), // Defini o tamanho estático
                 Location = new Point(20, 20),
-                Font = new Font("Segoe UI", 10),
+                Font = new Font("Segoe UI", 12),
                 FullRowSelect = true,
                 HeaderStyle = ColumnHeaderStyle.Clickable
             };
@@ -106,6 +104,10 @@ namespace TaskManager
             taskList.Columns.Add("Nome", 300);
             taskList.Columns.Add("Data", 200);
             taskList.Columns.Add("Status", 150);
+
+            taskList.DrawSubItem += taskList_DrawSubItem; // Vinculando o evento
+            taskList.DrawColumnHeader += taskList_DrawColumnHeader; // Para desenhar o cabeçalho
+
             mainPanel.Controls.Add(taskList);
         }
 
@@ -124,7 +126,6 @@ namespace TaskManager
             }
         }
 
-
         private void btnAddTaskClick(object sender, EventArgs e)
         {
             using (AddTaskForm addTaskForm = new AddTaskForm())
@@ -136,7 +137,7 @@ namespace TaskManager
                         database.InsertTask(addTaskForm.TaskName, addTaskForm.TaskDate);
                         UpdateTaskList();
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         MessageBox.Show("Erro ao adicionar tarefa " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
@@ -154,7 +155,7 @@ namespace TaskManager
                     try
                     {
                         // Pega o ID da tarefa selecionada (primeira coluna invisível)
-                        int taskId = Convert.ToInt32(taskList.SelectedItems[0].SubItems[0].Text); 
+                        int taskId = Convert.ToInt32(taskList.SelectedItems[0].SubItems[0].Text);
                         // Chama o método de exclusão passando o ID
                         database.DeleteTask(taskId);
 
@@ -162,7 +163,7 @@ namespace TaskManager
                         UpdateTaskList();
                     }
 
-                    catch (Exception ex) 
+                    catch (Exception ex)
                     {
                         MessageBox.Show("Erro ao excluir tarefa " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
@@ -174,11 +175,45 @@ namespace TaskManager
             }
         }
 
+        private void taskList_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
+        {
+            // Desenha o cabeçalho normalmente
+            e.DrawDefault = true;
+        }
+
+        private void taskList_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
+        {
+
+            if (e.ColumnIndex == 3)
+            {
+                var status = e.SubItem.Text;
+
+                if (status == "Pendente")
+                {
+                    // Cor de fundo amarela para a célula
+                    e.Graphics.FillRectangle(Brushes.Yellow, e.Bounds);
+
+                    // Texto em negrito e preto
+                    using (var boldFont = new Font("Segoe UI", 12, FontStyle.Bold))
+                    {
+                        e.Graphics.DrawString(status, boldFont, Brushes.Black, e.Bounds);
+                    }
+                }
+                else
+                {
+                    e.DrawDefault = true;
+                }
+            }
+            else
+            {
+                e.DrawDefault = true;
+            }
+        }
 
         private void UpdateTaskList()
         {
-            //Limpa para não ter problemas de exibição aqui
-            taskList.Items.Clear();  
+            // Limpa para não ter problemas de exibição aqui
+            taskList.Items.Clear();
 
             try
             {
@@ -205,10 +240,11 @@ namespace TaskManager
                         item.SubItems.Add(data);
                         item.SubItems.Add(status);
 
+                        item.Font = new Font("Segoe UI", 12);
+
                         taskList.Items.Add(item);
                     }
                 }
- 
 
                 reader.Close();
             }
@@ -224,10 +260,9 @@ namespace TaskManager
             // 
             // MainForm
             // 
-            this.ClientSize = new System.Drawing.Size(401, 314);
+            this.ClientSize = new System.Drawing.Size(1000, 700);
             this.Name = "MainForm";
             this.ResumeLayout(false);
-
         }
     }
 }
