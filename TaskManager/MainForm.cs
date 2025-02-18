@@ -120,20 +120,21 @@ namespace TaskManager
             }
         }
 
- 
+
         private void btnAddTaskClick(object sender, EventArgs e)
         {
-            try
+            using (AddTaskForm addTaskForm = new AddTaskForm())
             {
-                //Insere e atualiza
-                database.InsertTask("Test", "01/01/3000", "Pendente");
-                UpdateTaskList();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Erro ao adicionar a tarefa: " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (addTaskForm.ShowDialog() == DialogResult.OK)
+                {
+
+                    database.InsertTask(addTaskForm.TaskName, addTaskForm.TaskDate);
+                    UpdateTaskList();  
+                }
             }
         }
+
+ 
 
         private void UpdateTaskList()
         {
