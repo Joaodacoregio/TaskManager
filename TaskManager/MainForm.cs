@@ -206,7 +206,7 @@ namespace TaskManager
 
         private void btnAddTaskClick(object sender, EventArgs e)
         {
-            using (addOrUpdateTaskModal addTaskForm = new addOrUpdateTaskModal(false))
+            using (addOrUpdateTaskModal addTaskForm = new addOrUpdateTaskModal())
             {
                 if (addTaskForm.ShowDialog() == DialogResult.OK)
                 {
@@ -269,7 +269,7 @@ namespace TaskManager
                     }
 
                     // Vou usar o modal de adicionar   
-                    using (addOrUpdateTaskModal addForm = new addOrUpdateTaskModal(true))
+                    using (addOrUpdateTaskModal addForm = new addOrUpdateTaskModal(true,taskToUpdate))
                     {
                         if (addForm.ShowDialog() == DialogResult.OK)
                         {

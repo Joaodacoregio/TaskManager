@@ -21,10 +21,13 @@ namespace TaskManager
         private Button btnSave;
         private Button btnCancel;
         private TextBox txtDescription;
-        private bool updateMode = false;
+        private Task taskToUpdate;
+        private bool updateMode;
 
-        public addOrUpdateTaskModal(bool updateMode)
+        public addOrUpdateTaskModal(bool updateMode_ = false ,Task taskToUpdate_ = null)
         {
+            this.taskToUpdate = taskToUpdate_;
+            this.updateMode = updateMode_;
             setupUIForm();
         }
 
@@ -49,6 +52,7 @@ namespace TaskManager
                 Location = new Point(20, 30),
                 AutoSize = true,
                 Font = new Font("Segoe UI", 12, FontStyle.Bold)
+                
             };
             txtName = new TextBox()
             {
@@ -123,6 +127,13 @@ namespace TaskManager
             btnCancel.FlatAppearance.BorderSize = 0;
             btnCancel.Click += (sender, e) => this.DialogResult = DialogResult.Cancel;
 
+            if (updateMode && taskToUpdate != null)
+            {
+                txtName.Text = taskToUpdate.Name;
+                datePicker.Value = taskToUpdate.LimitDate;
+                txtDescription.Text = taskToUpdate.Description;
+            }
+
             // Adicionando os controles ao formulário
             this.Controls.Add(lblName);
             this.Controls.Add(txtName);
@@ -132,6 +143,7 @@ namespace TaskManager
             this.Controls.Add(txtDescription);
             this.Controls.Add(btnSave);
             this.Controls.Add(btnCancel);
+
         }
 
         private void BtnSave_Click(object sender, EventArgs e)
