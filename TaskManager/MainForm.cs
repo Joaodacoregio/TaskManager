@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Drawing;
 using System.Globalization;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace TaskManager
@@ -95,6 +96,7 @@ namespace TaskManager
             //Clicks
             btnAddTask.Click += btnAddTaskClick;  
             btnRemoveTask.Click += btnRemoveTaskClick;
+            btnUpdateTask.Click += btnUpdateTaskClick;
 
             sideMenu.Controls.Add(btnAddTask);
             sideMenu.Controls.Add(btnRemoveTask);
@@ -163,7 +165,7 @@ namespace TaskManager
                 ListViewItem selectedItem = taskList.SelectedItems[0];
                 int taskId = Convert.ToInt32(selectedItem.SubItems[0].Text);
 
-                string description = database.getTaskUsingId(taskId).Description;
+                string description = database.getTask(taskId).Description;
                 using (DescriptionModalForm descriptionForm = new DescriptionModalForm(description))
                 {
                     descriptionForm.ShowDialog();  
@@ -184,13 +186,15 @@ namespace TaskManager
                 ListViewItem selectedItem = taskList.SelectedItems[0];
                 int taskId = Convert.ToInt32(selectedItem.SubItems[0].Text);
 
-                if (database.getTaskUsingId(taskId).Status == "Expirado")
+                if (database.getTask(taskId).Status == "Expirado")
                 {
                     MessageBox.Show("Tarefas expiradas não podem ser concluidas!", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-
-                database.setStatus(taskId, "Concluido");
+                //Atualiza o status da task
+                Task task = database.getTask(taskId);
+                task.Status = "Concluido";
+                database.updateTask(task, taskId);
                 UpdateTaskList();
 
             }
@@ -202,7 +206,7 @@ namespace TaskManager
 
         private void btnAddTaskClick(object sender, EventArgs e)
         {
-            using (AddTaskModalForm addTaskForm = new AddTaskModalForm())
+            using (addOrUpdateTaskModal addTaskForm = new addOrUpdateTaskModal(false))
             {
                 if (addTaskForm.ShowDialog() == DialogResult.OK)
                 {
@@ -248,6 +252,53 @@ namespace TaskManager
                 MessageBox.Show("Por favor, selecione uma tarefa para excluir.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private void btnUpdateTaskClick(object sender, EventArgs e)
+        {
+            if (taskList.SelectedItems.Count > 0)
+            {
+                try
+                {
+                    int taskId = Convert.ToInt32(taskList.SelectedItems[0].SubItems[0].Text);
+                    Task taskToUpdate = database.getTask(taskId);
+
+                    if(taskToUpdate.Status == "Expirado")
+                    {
+                        MessageBox.Show("Tarefa expirada.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    // Vou usar o modal de adicionar   
+                    using (addOrUpdateTaskModal addForm = new addOrUpdateTaskModal(true))
+                    {
+                        if (addForm.ShowDialog() == DialogResult.OK)
+                        {
+                            // Atualiza a tarefa com os novos valores do formulário
+                            taskToUpdate.Name = addForm.TaskName;
+                            taskToUpdate.LimitDate = addForm.TaskDate;
+                            taskToUpdate.Description = addForm.TaskDescription;
+                            taskToUpdate.Status = "Pendente";
+
+                            // Atualiza a tarefa no banco de dados
+                            database.updateTask(taskToUpdate, taskId);
+
+                            // Atualiza a lista de tarefas na interface
+                            UpdateTaskList();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Erro ao atualizar tarefa: " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Por favor, selecione uma tarefa para atualizar.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+
 
         private void taskList_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
         {
@@ -362,7 +413,9 @@ namespace TaskManager
             {
                     if (task.LimitDate < DateTime.Today && task.Status != "Concluido")
                     {
-                        database.setStatus(task.Id, "Expirado");
+                        //Atualiza o status da task
+                        task.Status = "Expirado";
+                        database.updateTask(task, task.Id);
                     }
             }
         }

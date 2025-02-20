@@ -10,7 +10,7 @@ namespace TaskManager
 
     }
 
-    public class AddTaskModalForm : ModalForm
+    public class addOrUpdateTaskModal : ModalForm
     {
         public string TaskName { get; private set; }
         public DateTime TaskDate { get; private set; }
@@ -21,8 +21,9 @@ namespace TaskManager
         private Button btnSave;
         private Button btnCancel;
         private TextBox txtDescription;
+        private bool updateMode = false;
 
-        public AddTaskModalForm()
+        public addOrUpdateTaskModal(bool updateMode)
         {
             setupUIForm();
         }
@@ -30,7 +31,7 @@ namespace TaskManager
         public override void setupUIForm()
         {
             // Configuração da Janela
-            this.Text = "Adicionar Nova Tarefa";
+            this.Text = updateMode ? "Atualizar tarefa" : "Adicionar Nova Tarefa";
             this.Size = new Size(425, 500);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.StartPosition = FormStartPosition.CenterParent;
@@ -149,6 +150,7 @@ namespace TaskManager
         }
     }
 
+ 
 
     public class DescriptionModalForm : ModalForm
     {

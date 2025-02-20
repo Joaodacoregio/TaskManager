@@ -30,9 +30,9 @@ namespace TaskManager
 
         public abstract void InitializeDatabase();
         public abstract void InsertTask(string name, DateTime date, string description);
-        public abstract void setStatus(int id , string status);
+        public abstract void updateTask(Task updatedTask , int taskId);
 
-        public abstract Task getTaskUsingId(int id);
+        public abstract Task getTask(int id);
         public abstract List<Task> getAllTasksInObjectFormat();
 
         public abstract void DeleteTask(int ID);
@@ -121,9 +121,9 @@ namespace TaskManager
             }
         }
 
- 
 
-        public override void setStatus(int ID, string status)
+
+        public override void updateTask(Task updatedTask, int taskId)
         {
             try
             {
@@ -131,15 +131,30 @@ namespace TaskManager
                 {
                     conn.Open();
 
-                    // Query de atualização
-                    string query = "UPDATE Tasks SET Status = @status WHERE Id = @taskId";
+                    // Query de atualização para todos os campos
+                    string query = @"
+                UPDATE Tasks 
+                SET Name = @name, 
+                    Status = @status, 
+                    Date = @limitDate,
+                    Description = @description
+                WHERE Id = @taskId";
+
                     using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
                     {
-                        cmd.Parameters.Add("@taskId", DbType.Int32).Value = ID;
-                        cmd.Parameters.AddWithValue("@status", status);
+                        cmd.Parameters.AddWithValue("@name", updatedTask.Name);
+                        cmd.Parameters.AddWithValue("@status", updatedTask.Status);
+                        cmd.Parameters.AddWithValue("@limitDate", updatedTask.LimitDate);
+                        cmd.Parameters.AddWithValue("@taskId", taskId);
+                        cmd.Parameters.AddWithValue("@description", updatedTask.Description);
 
                         // Executa a atualização
                         int rowsAffected = cmd.ExecuteNonQuery();
+
+                        if (rowsAffected == 0)
+                        {
+                            Console.WriteLine("Nenhuma tarefa foi atualizada. Verifique se o ID existe.");
+                        }
                     }
                 }
             }
@@ -152,6 +167,7 @@ namespace TaskManager
                 Console.WriteLine("Erro inesperado: " + ex.Message);
             }
         }
+
 
 
         public override SQLiteDataReader GetAllTasks()
@@ -207,7 +223,7 @@ namespace TaskManager
         }
 
 
-        public override Task getTaskUsingId(int id)
+        public override Task getTask(int id)
         {
             Task task = null;
 
