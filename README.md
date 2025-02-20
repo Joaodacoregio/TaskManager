@@ -11,4 +11,5 @@ Uma das partes mais dificeis foi fazer a pintura dinâmica da coluna Status. Nã
 ![image](https://github.com/user-attachments/assets/225da260-e5f8-4413-9353-e580246eb9ce)
 ![image](https://github.com/user-attachments/assets/0a93112a-5171-4fe6-a1ef-4eabc5740cf8)
 ![image](https://github.com/user-attachments/assets/ab87fc0c-7d96-41ea-83e9-69cd78035824)
-![image](https://github.com/user-attachments/assets/f23abf43-39ca-4329-b083-4826f112f055)
+![image](https://github.com/user-attachments/assets/72ccd80e-8e95-4467-83e2-8bb7afb597ee)
+
