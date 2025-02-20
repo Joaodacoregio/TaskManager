@@ -163,7 +163,7 @@ namespace TaskManager
                 ListViewItem selectedItem = taskList.SelectedItems[0];
                 int taskId = Convert.ToInt32(selectedItem.SubItems[0].Text);
 
-                string description = database.getTaskDescription(taskId);
+                string description = database.getTaskUsingId(taskId).Description;
                 using (DescriptionModalForm descriptionForm = new DescriptionModalForm(description))
                 {
                     descriptionForm.ShowDialog();  
@@ -184,8 +184,15 @@ namespace TaskManager
                 ListViewItem selectedItem = taskList.SelectedItems[0];
                 int taskId = Convert.ToInt32(selectedItem.SubItems[0].Text);
 
+                if (database.getTaskUsingId(taskId).Status == "Expirado")
+                {
+                    MessageBox.Show("Tarefas expiradas não podem ser concluidas!", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
                 database.setStatus(taskId, "Concluido");
                 UpdateTaskList();
+
             }
             catch (Exception ex)
             {
@@ -349,11 +356,11 @@ namespace TaskManager
 
         private void expireTasks()
         {
-            List<Tasks> tasks = database.getAllTasksInObjectFormat();
+            List<Task> tasks = database.getAllTasksInObjectFormat();
 
             foreach (var task in tasks)
             {
-                    if (task.limitDate < DateTime.Today && task.Status != "Concluido")
+                    if (task.LimitDate < DateTime.Today && task.Status != "Concluido")
                     {
                         database.setStatus(task.Id, "Expirado");
                     }

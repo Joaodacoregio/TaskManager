@@ -1,47 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Data;
 using System.Data.SQLite;
 using System.IO;
 using System.Windows.Forms;
 using System.Xml.Linq;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace TaskManager
 {
 
-    public class Tasks
+    public class Task
     {
+        //Em c# a principio é uma boa pratica deixar os metodos publicos e usar get e set apenas se precisar de validação
+
         public int Id { get; set; }
         public string Name { get; set; }
         public string Status { get; set; }
-        public DateTime limitDate { get; set; }
+        public DateTime LimitDate { get; set; }
+        public string Description { get; set; }
     }
+
+
 
     public abstract class Database
     {
-        private string connectionString;
+        public string connectionString { get; set; }
 
         public abstract void InitializeDatabase();
         public abstract void InsertTask(string name, DateTime date, string description);
         public abstract void setStatus(int id , string status);
 
-        public abstract List<Tasks> getAllTasksInObjectFormat();
+        public abstract Task getTaskUsingId(int id);
+        public abstract List<Task> getAllTasksInObjectFormat();
 
-        public abstract string getTaskDescription(int ID);
         public abstract void DeleteTask(int ID);
         public abstract SQLiteDataReader GetAllTasks();
 
 
 
-        public void setConnectionString(string connectionString_)
-        {
-            connectionString = connectionString_;
-        }
-
-        public string getConnectionString()
-        {
-            return connectionString;
-        }
+ 
 
     }
 
@@ -55,14 +54,15 @@ namespace TaskManager
         public override void InitializeDatabase()
         {
             //Setar a string de conexão
-            setConnectionString("Data Source=tasks.db;Version=3;");
+            connectionString = "Data Source=tasks.db;Version=3;";
+ 
 
             if (!File.Exists("tasks.db"))
             {
                 SQLiteConnection.CreateFile("tasks.db");
             }
 
-            using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
+            using (SQLiteConnection conn = new SQLiteConnection(connectionString))
             {
                 conn.Open();
 
@@ -84,7 +84,7 @@ namespace TaskManager
         }
         public override void InsertTask(string name, DateTime date, string description)
         {
-            using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
+            using (SQLiteConnection conn = new SQLiteConnection(connectionString))
             {
                 conn.Open();
 
@@ -101,7 +101,7 @@ namespace TaskManager
 
         public override void DeleteTask(int ID)
         {
-            using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
+            using (SQLiteConnection conn = new SQLiteConnection(connectionString))
             {
                 try
                 {
@@ -121,49 +121,13 @@ namespace TaskManager
             }
         }
 
-
-        public override string getTaskDescription(int ID)
-        {
-            try
-            {
-                using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
-                {
-                    conn.Open();
-
-                    string query = "SELECT Description FROM Tasks WHERE Id = @taskId";
-                    using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
-                    {
-                        cmd.Parameters.Add("@taskId", DbType.Int32).Value = ID;
-                        object result = cmd.ExecuteScalar();
-
-                        if (result == null || result == DBNull.Value)
-                        {
-                            return "Descrição não encontrada."; // Evita exceção desnecessária
-                        }
-
-                        return result.ToString();
-                    }
-                }
-            }
-            catch (SQLiteException ex)
-            {
-                // Log do erro pode ser útil
-                Console.WriteLine("Erro no banco de dados: " + ex.Message);
-                return "Erro ao acessar o banco de dados.";
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Erro inesperado: " + ex.Message);
-                return "Ocorreu um erro inesperado.";
-            }
-        }
-
+ 
 
         public override void setStatus(int ID, string status)
         {
             try
             {
-                using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
+                using (SQLiteConnection conn = new SQLiteConnection(connectionString))
                 {
                     conn.Open();
 
@@ -192,36 +156,38 @@ namespace TaskManager
 
         public override SQLiteDataReader GetAllTasks()
         {
-            SQLiteConnection conn = new SQLiteConnection(getConnectionString());
+            SQLiteConnection conn = new SQLiteConnection(connectionString);
             conn.Open();
 
             string selectQuery = "SELECT * FROM Tasks";
             SQLiteCommand cmd = new SQLiteCommand(selectQuery, conn);
             return cmd.ExecuteReader();
         }
-        public override List<Tasks> getAllTasksInObjectFormat()
+
+        public override List<Task> getAllTasksInObjectFormat()
         {
-            List<Tasks> tasks = new List<Tasks>();
+            List<Task> tasks = new List<Task>();
 
             try
             {
-                using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
+                using (SQLiteConnection conn = new SQLiteConnection(connectionString))
                 {
                     conn.Open();
 
-                    string query = "SELECT Id, Name, Status, Date FROM Tasks";
+                    string query = "SELECT Id, Name, Status, Date,Description FROM Tasks";
                     using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
                     {
                         using (SQLiteDataReader reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                tasks.Add(new Tasks
+                                tasks.Add(new Task
                                 {
                                     Id = reader.GetInt32(0),
                                     Name = reader.GetString(1),
                                     Status = reader.GetString(2),
-                                    limitDate = reader.GetDateTime(3)
+                                    LimitDate = reader.GetDateTime(3),
+                                    Description = reader.GetString(4)
                                 });
                             }
                         }
@@ -240,14 +206,55 @@ namespace TaskManager
             return tasks;
         }
 
+
+        public override Task getTaskUsingId(int id)
+        {
+            Task task = null;
+
+            try
+            {
+                using (SQLiteConnection conn = new SQLiteConnection(connectionString))
+                {
+                    conn.Open();
+
+                    string query = "SELECT Id, Name, Status, Date,Description FROM Tasks WHERE Id = @taskId";
+                    using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@taskId", id);
+
+                        using (SQLiteDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                task = new Task
+                                {
+                                    Id = reader.GetInt32(0),
+                                    Name = reader.GetString(1),
+                                    Status = reader.GetString(2),
+                                    LimitDate = reader.GetDateTime(3),
+                                    Description = reader.GetString(4)
+                                }; 
+                            }
+                        }
+                    }
+                }
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine("Erro no banco de dados: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro inesperado: " + ex.Message);
+            }
+
+            return task; // Retorna null se a tarefa não for encontrada
+        }
     }
 
- 
 
- 
-
-    //Fabrica de base de dados caso eu queira mudar no futuro
-    public class DatabaseFactory
+        //Fabrica de base de dados caso eu queira mudar no futuro
+        public class DatabaseFactory
     {
         public Database CreateDatabase(string targetDatabase)
         {
