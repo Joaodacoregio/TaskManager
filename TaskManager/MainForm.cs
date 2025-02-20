@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace TaskManager
@@ -174,6 +176,7 @@ namespace TaskManager
            
         }
 
+        //click botão direito na task
         private void checkMenuItem_Click(object sender , EventArgs e)
         {
             try
@@ -181,7 +184,7 @@ namespace TaskManager
                 ListViewItem selectedItem = taskList.SelectedItems[0];
                 int taskId = Convert.ToInt32(selectedItem.SubItems[0].Text);
 
-                database.setStatus(taskId);
+                database.setStatus(taskId, "Concluido");
                 UpdateTaskList();
             }
             catch (Exception ex)
@@ -297,6 +300,7 @@ namespace TaskManager
 
         private void UpdateTaskList()
         {
+            expireTasks();
             // Limpa para não ter problemas de exibição aqui
             taskList.Items.Clear();
 
@@ -319,10 +323,14 @@ namespace TaskManager
                         if (string.IsNullOrEmpty(nome) || string.IsNullOrEmpty(data) || string.IsNullOrEmpty(status))
                             continue;
 
+
+                        DateTime taskDate = DateTime.Parse(data);
+                        string formattedDate = taskDate.ToString("dd-MM-yyyy");
+
                         // Adiciona o item ao ListView
                         ListViewItem item = new ListViewItem(taskId); // Primeiro item é o ID (invisível)
                         item.SubItems.Add(nome);
-                        item.SubItems.Add(data);
+                        item.SubItems.Add(formattedDate);  
                         item.SubItems.Add(status);
 
                         item.Font = new Font("Segoe UI", 12);
@@ -338,6 +346,20 @@ namespace TaskManager
                 MessageBox.Show("Erro ao carregar as tarefas: " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private void expireTasks()
+        {
+            List<Tasks> tasks = database.getAllTasksInObjectFormat();
+
+            foreach (var task in tasks)
+            {
+                    if (task.limitDate < DateTime.Today && task.Status != "Concluido")
+                    {
+                        database.setStatus(task.Id, "Expirado");
+                    }
+            }
+        }
+
 
         private void InitializeComponent()
         {

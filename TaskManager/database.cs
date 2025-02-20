@@ -8,13 +8,24 @@ using System.Xml.Linq;
 
 namespace TaskManager
 {
+
+    public class Tasks
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Status { get; set; }
+        public DateTime limitDate { get; set; }
+    }
+
     public abstract class Database
     {
         private string connectionString;
 
         public abstract void InitializeDatabase();
-        public abstract void InsertTask(string name, string date, string description);
-        public abstract void setStatus(int Id);
+        public abstract void InsertTask(string name, DateTime date, string description);
+        public abstract void setStatus(int id , string status);
+
+        public abstract List<Tasks> getAllTasksInObjectFormat();
 
         public abstract string getTaskDescription(int ID);
         public abstract void DeleteTask(int ID);
@@ -55,10 +66,12 @@ namespace TaskManager
             {
                 conn.Open();
 
+                string drop_sql = @"DROP TABLE IF EXISTS Tasks;";
+
                 string sql = @"CREATE TABLE IF NOT EXISTS Tasks (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Name TEXT NOT NULL,
-                Date TEXT NOT NULL,
+                Date DATETIME NOT NULL,
                 Status TEXT NOT NULL DEFAULT 'Pendente',
                 Description TEXT  
                 );";
@@ -69,7 +82,7 @@ namespace TaskManager
                 }
             }
         }
-        public override void InsertTask(string name, string date, string description)
+        public override void InsertTask(string name, DateTime date, string description)
         {
             using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
             {
@@ -146,7 +159,7 @@ namespace TaskManager
         }
 
 
-        public override void setStatus(int ID)
+        public override void setStatus(int ID, string status)
         {
             try
             {
@@ -155,10 +168,11 @@ namespace TaskManager
                     conn.Open();
 
                     // Query de atualização
-                    string query = "UPDATE Tasks SET Status = 'Concluido' WHERE Id = @taskId";
+                    string query = "UPDATE Tasks SET Status = @status WHERE Id = @taskId";
                     using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
                     {
                         cmd.Parameters.Add("@taskId", DbType.Int32).Value = ID;
+                        cmd.Parameters.AddWithValue("@status", status);
 
                         // Executa a atualização
                         int rowsAffected = cmd.ExecuteNonQuery();
@@ -185,8 +199,52 @@ namespace TaskManager
             SQLiteCommand cmd = new SQLiteCommand(selectQuery, conn);
             return cmd.ExecuteReader();
         }
+        public override List<Tasks> getAllTasksInObjectFormat()
+        {
+            List<Tasks> tasks = new List<Tasks>();
+
+            try
+            {
+                using (SQLiteConnection conn = new SQLiteConnection(getConnectionString()))
+                {
+                    conn.Open();
+
+                    string query = "SELECT Id, Name, Status, Date FROM Tasks";
+                    using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
+                    {
+                        using (SQLiteDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                tasks.Add(new Tasks
+                                {
+                                    Id = reader.GetInt32(0),
+                                    Name = reader.GetString(1),
+                                    Status = reader.GetString(2),
+                                    limitDate = reader.GetDateTime(3)
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine("Erro no banco de dados: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro inesperado: " + ex.Message);
+            }
+
+            return tasks;
+        }
+
     }
 
+ 
+
+ 
 
     //Fabrica de base de dados caso eu queira mudar no futuro
     public class DatabaseFactory

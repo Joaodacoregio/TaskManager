@@ -13,7 +13,7 @@ namespace TaskManager
     public class AddTaskModalForm : ModalForm
     {
         public string TaskName { get; private set; }
-        public string TaskDate { get; private set; }
+        public DateTime TaskDate { get; private set; }
         public string TaskDescription { get; private set; }
 
         private TextBox txtName;
@@ -142,7 +142,7 @@ namespace TaskManager
             }
 
             TaskName = txtName.Text;
-            TaskDate = datePicker.Value.ToString("dd-MM-yyyy");
+            TaskDate = datePicker.Value;
             TaskDescription = txtDescription.Text;
 
             this.DialogResult = DialogResult.OK;
